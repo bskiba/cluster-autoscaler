@@ -17,6 +17,7 @@ limitations under the License.
 package klogx
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -64,5 +65,25 @@ func TestVFalse(t *testing.T) {
 func TestV(t *testing.T) {
 	for i := klog.Level(0); i <= 10; i++ {
 		assert.Equal(t, klog.V(i).Enabled(), V(i).v.Enabled())
+	}
+}
+
+// The log header should name the caller of Infof, Info and Warningf, not
+// this package.
+func TestHeaderNamesCaller(t *testing.T) {
+	defer klog.CaptureState().Restore()
+	var buf bytes.Buffer
+	klog.LogToStderr(false)
+	klog.SetOutput(&buf)
+
+	for name, log := range map[string]func(Verbose){
+		"Infof":    func(v Verbose) { v.Infof("message from %s", "Infof") },
+		"Info":     func(v Verbose) { v.Info("message from Info") },
+		"Warningf": func(v Verbose) { v.Warningf("message from %s", "Warningf") },
+	} {
+		buf.Reset()
+		log(V(0).UpTo(NewLoggingQuota(1)))
+		assert.Contains(t, buf.String(), "klogx_test.go:", "%s should report the caller in the header", name)
+		assert.NotContains(t, buf.String(), "klogx.go:", "%s should not report the wrapper in the header", name)
 	}
 }

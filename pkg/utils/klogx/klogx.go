@@ -84,7 +84,8 @@ func (v Verbose) Over(q *Quota) Verbose {
 // allows for it.
 func (v Verbose) Infof(format string, args ...interface{}) {
 	if v.enabled {
-		v.v.Infof(format, args...)
+		// Depth 1 skips this wrapper, so the header shows the caller.
+		v.v.InfofDepth(1, format, args...)
 	}
 }
 
@@ -92,7 +93,7 @@ func (v Verbose) Infof(format string, args ...interface{}) {
 // allows for it.
 func (v Verbose) Info(args ...interface{}) {
 	if v.enabled {
-		v.v.Info(args...)
+		v.v.InfoDepth(1, args...)
 	}
 }
 
@@ -100,6 +101,6 @@ func (v Verbose) Info(args ...interface{}) {
 func (v Verbose) Warningf(format string, args ...interface{}) {
 	if v.enabled {
 		// klog.Verbose does not implement Warningf
-		klog.Warningf(format, args...)
+		klog.WarningfDepth(1, format, args...)
 	}
 }
